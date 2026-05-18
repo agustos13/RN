@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Büyüme">
+<title>Ragıp & Nusret · Büyüme</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0f0f1a;--surface:#16162a;--card:#1e1e35;--card2:#232340;
+  --ragip:#f4a261;--ragip-dim:rgba(244,162,97,0.15);
+  --nusret:#48cae4;--nusret-dim:rgba(72,202,228,0.15);
+  --text:#e8e8f0;--muted:#7070a0;--border:rgba(255,255,255,0.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100dvh;overscroll-behavior:none}
+.header{padding:52px 20px 16px;background:linear-gradient(180deg,rgba(244,162,97,0.08) 0%,transparent 100%);border-bottom:1px solid var(--border)}
+.header h1{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-.5px;background:linear-gradient(135deg,var(--ragip),var(--nusret));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header p{font-size:12px;color:var(--muted);margin-top:3px}
+.child-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface)}
+.child-tab{flex:1;padding:14px;text-align:center;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);border:none;background:none;font-family:'DM Sans',sans-serif;transition:all .2s;position:relative}
+.child-tab::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;border-radius:2px 2px 0 0;opacity:0;transition:opacity .2s}
+.child-tab.ragip.active{color:var(--ragip)}.child-tab.ragip::after{background:var(--ragip)}
+.child-tab.nusret.active{color:var(--nusret)}.child-tab.nusret::after{background:var(--nusret)}
+.child-tab.active::after{opacity:1}
+.main{padding:0 0 120px}
+.metric-tabs{display:flex;gap:8px;padding:16px 16px 0}
+.metric-tab{flex:1;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;text-align:center}
+.metric-tab.active-ragip{background:var(--ragip-dim);border-color:var(--ragip);color:var(--ragip)}
+.metric-tab.active-nusret{background:var(--nusret-dim);border-color:var(--nusret);color:var(--nusret)}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:14px 16px}
+.stat-card{background:var(--card);border-radius:14px;padding:14px 12px;border:1px solid var(--border);text-align:center}
+.stat-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.stat-value{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-.5px}
+.stat-value.ragip-c{color:var(--ragip)}.stat-value.nusret-c{color:var(--nusret)}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:3px}
+.pct-badge{display:inline-block;margin-top:5px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.pct-badge.ragip-c{background:var(--ragip-dim);color:var(--ragip)}
+.pct-badge.nusret-c{background:var(--nusret-dim);color:var(--nusret)}
+
+/* Projection card */
+.projection-card{margin:0 16px 4px;background:var(--card);border-radius:14px;border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.projection-icon{font-size:22px;flex-shrink:0}
+.projection-body{flex:1}
+.projection-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.projection-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.projection-val{font-family:'DM Serif Display',serif;font-size:20px;letter-spacing:-.3px}
+.projection-val.ragip-c{color:var(--ragip)}.projection-val.nusret-c{color:var(--nusret)}
+.projection-sep{color:var(--muted);font-size:12px}
+.projection-sub{font-size:11px;color:var(--muted)}
+
+.chart-card{margin:0 16px 4px;background:var(--card);border-radius:18px;border:1px solid var(--border);padding:16px}
+.chart-wrap{position:relative;height:260px}
+.add-section{margin:0 16px 14px;background:var(--card);border-radius:18px;border:1px solid var(--border);padding:16px}
+.add-section h3{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px}
+.input-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.input-group label{display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.input-group input{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;font-weight:500;-webkit-appearance:none;appearance:none;transition:border-color .2s}
+.input-group input:focus{outline:none}
+.rf:focus{border-color:var(--ragip)!important}.nf:focus{border-color:var(--nusret)!important}
+.btn-add{width:100%;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-add.rb{background:var(--ragip);color:#1a0a00}.btn-add.nb{background:var(--nusret);color:#00111a}
+.btn-add:active{transform:scale(.97);opacity:.9}.btn-add:disabled{opacity:.5;pointer-events:none}
+.history-section{margin:0 16px}
+.history-section h3{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding:0 2px}
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-item{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:12px 14px;display:grid;grid-template-columns:1fr auto 28px;gap:8px;align-items:center}
+.history-date{font-size:13px;font-weight:500;color:var(--text)}
+.history-age{font-size:11px;color:var(--muted);margin-top:2px}
+.history-val{font-size:13px;font-weight:600;text-align:right}
+.history-val.ragip-c{color:var(--ragip)}.history-val.nusret-c{color:var(--nusret)}
+.btn-del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;border-radius:6px;line-height:1}
+.btn-del:active{color:#ff6b6b}
+.empty-state{text-align:center;color:var(--muted);font-size:13px;padding:20px}
+.sync-bar{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 16px;font-size:11px;color:var(--muted);min-height:28px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background .3s}
+.sync-dot.syncing{background:#f4d03f;animation:pulse 1s infinite}
+.sync-dot.ok{background:#58d68d}.sync-dot.err{background:#e74c3c}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,.2);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:none}
+.spinner.v{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bottom-safe{height:env(safe-area-inset-bottom,16px)}
+.ref-note{text-align:center;font-size:10px;color:var(--muted);padding:4px 16px 14px;opacity:.7}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Ragıp & Nusret</h1>
+  <p>Büyüme Takip · Neyzi 2015 Türk Referans Değerleri</p>
+</div>
+
+<div class="child-tabs">
+  <button class="child-tab ragip active" onclick="selectChild('ragip',this)">Ragıp</button>
+  <button class="child-tab nusret" onclick="selectChild('nusret',this)">Nusret</button>
+</div>
+
+<div class="main">
+  <div class="sync-bar">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncText">Yükleniyor…</span>
+  </div>
+
+  <div class="metric-tabs">
+    <button class="metric-tab active-ragip" data-metric="height" onclick="selectMetric('height',this)">📏 Boy</button>
+    <button class="metric-tab" data-metric="weight" onclick="selectMetric('weight',this)">⚖️ Kilo</button>
+    <button class="metric-tab" data-metric="bmi" onclick="selectMetric('bmi',this)">📊 VKİ</button>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Projection card — sadece boy/kilo -->
+  <div class="projection-card" id="projectionCard" style="display:none">
+    <div class="projection-icon">🔭</div>
+    <div class="projection-body">
+      <div class="projection-label">18 Yaş Tahmini</div>
+      <div class="projection-row" id="projectionRow"></div>
+      <div class="projection-sub" id="projectionSub"></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+  <div class="ref-note" id="refNote">Neyzi O. et al., J Clin Res Pediatr Endocrinol 2015;7(4):280-293</div>
+
+  <div class="add-section">
+    <h3>Ölçüm Ekle</h3>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Tarih</label>
+        <input type="date" id="inputDate" class="rf">
+      </div>
+      <div class="input-group">
+        <label>Boy (cm)</label>
+        <input type="number" id="inputHeight" step="0.1" min="40" max="220" placeholder="—" class="rf">
+      </div>
+      <div class="input-group">
+        <label>Kilo (kg)</label>
+        <input type="number" id="inputWeight" step="0.1" min="1" max="150" placeholder="—" class="rf">
+      </div>
+    </div>
+    <button class="btn-add rb" id="addBtn" onclick="addMeasurement()">
+      <div class="spinner" id="addSpinner"></div>
+      <span id="addBtnText">Kaydet</span>
+    </button>
+  </div>
+
+  <div class="history-section">
+    <h3>Geçmiş Ölçümler</h3>
+    <div class="history-list" id="historyList"></div>
+  </div>
+  <div class="bottom-safe"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbxyi2q0FFJey8Y_bU6LE6R-AuZxaI9LAZdzS5om1E8tXWvc00RQiN2xvfONz_g-KNeH/exec';
+
+const CHILDREN = {
+  ragip:  {name:'Ragıp', dob:'2019-10-18', color:'#f4a261', colorDim:'rgba(244,162,97,0.15)',  cls:'ragip-c'},
+  nusret: {name:'Nusret',dob:'2022-04-10',  color:'#48cae4', colorDim:'rgba(72,202,228,0.15)', cls:'nusret-c'}
+};
+
+// Neyzi 2015 — Table 2: Boy (height) cm, Erkek [ay, p3,p10,p25,p50,p75,p90,p97]
+const HEIGHT_BOYS = [
+  [0,45.9,47.2,48.5,50.0,51.5,52.9,54.2],[3,56.2,57.8,59.5,61.3,63.2,64.8,66.4],
+  [6,62.8,64.5,66.2,68.0,69.9,71.6,73.2],[9,67.4,69.1,70.9,72.8,74.7,76.4,78.1],
+  [12,70.8,72.7,74.7,76.9,79.1,81.1,83.0],[15,73.8,75.8,77.9,80.2,82.5,84.5,86.6],
+  [18,76.4,78.5,80.7,83.1,85.5,87.7,89.8],[24,81.0,83.3,85.6,88.2,90.8,93.2,95.5],
+  [30,85.3,87.6,90.0,92.6,95.3,97.6,100.0],[36,89.3,91.7,94.1,96.8,99.4,101.8,104.2],
+  [42,92.8,95.2,97.7,100.5,103.2,105.7,108.2],[48,96.0,98.6,101.1,104.0,106.9,109.5,112.0],
+  [54,99.0,101.7,104.3,107.3,110.3,113.0,115.6],[60,101.8,104.5,107.3,110.4,113.5,116.2,119.0],
+  [66,104.5,107.3,110.1,113.3,116.4,119.3,122.1],[72,107.1,110.0,112.9,116.1,119.3,122.2,125.1],
+  [84,112.1,115.1,118.2,121.5,124.9,128.0,131.0],[96,116.9,120.0,123.3,126.9,130.5,133.7,136.9],
+  [108,121.6,124.9,128.3,132.1,135.9,139.3,142.7],[120,126.4,130.0,133.6,137.6,141.6,145.2,148.7],
+  [132,131.7,135.5,139.4,143.8,148.1,152.0,155.9],[144,137.0,141.3,145.7,150.6,155.4,159.8,164.1],
+  [156,142.8,147.6,152.4,157.7,163.1,167.9,172.6],[168,150.3,155.0,159.7,164.9,170.1,174.8,179.5],
+  [180,156.9,161.2,165.5,170.3,175.1,179.4,183.7],[192,160.9,164.9,168.9,173.4,177.9,181.9,185.9],
+  [204,163.0,166.8,170.7,175.0,179.3,183.2,187.1],[216,164.5,168.2,172.0,176.2,180.4,184.2,187.9]
+];
+
+// Neyzi 2015 — Table 1: Kilo (weight) kg, Erkek [ay, p3,p10,p25,p50,p75,p90,p97]
+const WEIGHT_BOYS = [
+  [0,2.58,2.85,3.13,3.43,3.73,4.00,4.27],[3,4.75,5.26,5.79,6.38,6.99,7.54,8.10],
+  [6,6.21,6.79,7.41,8.12,8.85,9.54,10.25],[9,7.27,7.87,8.51,9.26,10.06,10.81,11.58],
+  [12,7.96,8.61,9.32,10.16,11.05,11.92,12.82],[15,8.61,9.28,10.01,10.89,11.83,12.75,13.72],
+  [18,9.13,9.82,10.58,11.49,12.48,13.46,14.49],[24,10.12,10.85,11.66,12.66,13.76,14.86,16.05],
+  [30,11.06,11.84,12.71,13.80,15.04,16.29,17.69],[36,11.81,12.65,13.61,14.83,16.24,17.71,19.39],
+  [42,12.60,13.50,14.60,15.90,17.40,18.90,20.60],[48,13.30,14.30,15.40,16.80,18.50,20.10,22.00],
+  [54,14.00,15.00,16.20,17.70,19.50,21.30,23.30],[60,14.70,15.80,17.00,18.60,20.50,22.40,24.60],
+  [66,15.40,16.50,17.90,19.60,21.60,23.60,26.00],[72,16.20,17.40,18.90,20.70,22.80,25.10,27.70],
+  [84,18.10,19.50,21.10,23.20,25.80,28.50,31.60],[96,19.90,21.50,23.40,25.90,28.90,32.20,36.10],
+  [108,21.70,23.60,25.80,28.80,32.40,36.40,41.30],[120,23.60,25.90,28.60,32.20,36.70,41.60,47.80],
+  [132,26.60,29.60,33.10,37.80,43.60,50.00,57.80],[144,29.90,33.80,38.40,44.30,51.30,58.70,67.10],
+  [156,33.40,38.00,43.20,49.80,57.30,64.90,73.30],[168,39.10,44.00,49.40,56.20,63.90,71.60,80.10],
+  [180,45.30,50.10,55.40,62.10,69.70,77.40,85.90],[192,49.90,54.50,59.70,66.20,73.60,81.20,89.60],
+  [204,53.20,57.80,62.80,69.20,76.50,84.00,92.40],[216,56.10,60.50,65.50,71.80,79.00,86.40,94.70]
+];
+
+// Neyzi 2015 — Table 3: VKİ kg/m², Erkek [ay, p5,p15,p25,p50,p75,p85,p95]
+const BMI_BOYS = [
+  [0,11.4,12.2,12.7,13.7,14.6,15.2,16.1],[3,14.4,15.3,15.8,16.9,18.0,18.6,19.7],
+  [6,15.0,15.9,16.5,17.5,18.6,19.2,20.3],[9,15.1,16.0,16.5,17.5,18.6,19.3,20.4],
+  [12,14.9,15.7,16.2,17.2,18.3,18.9,20.0],[15,14.7,15.5,16.0,17.0,18.0,18.6,19.7],
+  [18,14.5,15.3,15.7,16.7,17.7,18.3,19.3],[24,14.3,15.0,15.4,16.3,17.3,17.9,19.0],
+  [30,14.2,14.8,15.3,16.2,17.2,17.7,18.8],[36,13.9,14.6,15.0,15.9,17.0,17.6,18.7],
+  [42,13.8,14.5,14.9,15.8,16.8,17.4,18.5],[48,13.7,14.4,14.8,15.7,16.7,17.3,18.4],
+  [54,13.6,14.2,14.7,15.6,16.6,17.2,18.4],[60,13.5,14.2,14.6,15.5,16.5,17.1,18.3],
+  [66,13.4,14.1,14.5,15.4,16.5,17.1,18.4],[72,13.4,14.1,14.5,15.4,16.5,17.2,18.5],
+  [84,13.6,14.3,14.7,15.7,16.9,17.6,19.1],[96,13.8,14.5,15.0,16.1,17.4,18.2,19.9],
+  [108,14.0,14.8,15.3,16.5,18.0,19.0,21.0],[120,14.1,15.1,15.7,17.1,18.9,20.1,22.5],
+  [132,14.6,15.8,16.5,18.2,20.4,21.7,24.5],[144,15.2,16.5,17.4,19.3,21.7,23.1,26.0],
+  [156,15.6,17.0,18.0,19.9,22.3,23.7,26.5],[168,16.4,17.7,18.6,20.5,22.8,24.2,27.0],
+  [180,17.2,18.5,19.4,21.2,23.4,24.8,27.6],[192,18.0,19.3,20.1,21.9,24.1,25.4,28.2],
+  [204,18.7,19.9,20.7,22.5,24.7,26.1,28.8],[216,19.2,20.5,21.3,23.1,25.2,26.6,29.4]
+];
+
+const BMI_PCTS = [5,15,25,50,75,85,95];
+const HW_PCTS  = [3,10,25,50,75,90,97];
+
+let activeChild='ragip', activeMetric='height', chartInstance=null;
+let cache={ragip:null,nusret:null};
+
+// ── Yardımcılar ──────────────────────────────────────────
+function parseDate(s){
+  if(!s)return null;
+  s=String(s);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+  if(/^\d{2}\.\d{2}\.\d{4}$/.test(s)){const[d,m,y]=s.split('.').map(Number);return new Date(y,m-1,d);}
+  const d=new Date(s);return isNaN(d)?null:d;
+}
+function ageMonthsDays(dob, date) {
+  const d1=parseDate(dob), d2=parseDate(date);
+  if(!d1||!d2||d2<d1) return null;
+  let y=d2.getFullYear()-d1.getFullYear();
+  let m=d2.getMonth()-d1.getMonth();
+  let d=d2.getDate()-d1.getDate();
+  if(d<0){
+    m--;
+    const prevMonth=new Date(d2.getFullYear(),d2.getMonth(),0);
+    d+=prevMonth.getDate();
+  }
+  if(m<0){y--;m+=12;}
+  return {y,m,d};
+}
+function ageMonths(dob,date){
+  const a=ageMonthsDays(dob,date);
+  if(!a)return null;
+  return a.y*12+a.m;
+}
+function fmtAge(months){ // fallback, artık direkt ageMonthsDays kullanıyoruz
+  const y=Math.floor(months/12),r=months%12;
+  return y===0?r+' ay':r===0?y+' yıl':y+' yıl '+r+' ay';
+}
+function fmtAgeFull(dob, date){
+  const a=ageMonthsDays(dob,date);
+  if(!a) return '—';
+  const parts=[];
+  if(a.y>0) parts.push(a.y+' yıl');
+  if(a.m>0) parts.push(a.m+' ay');
+  if(a.d>0) parts.push(a.d+' gün');
+  return parts.length?parts.join(' '):'0 gün';
+}
+function fmtDate(iso){
+  if(!iso)return '—';
+  let d;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(iso))){
+    const [y,m,day]=String(iso).split('-').map(Number);
+    d=new Date(y,m-1,day);
+  } else if(/^\d{2}\.\d{2}\.\d{4}$/.test(String(iso))){
+    const [day,m,y]=String(iso).split('.').map(Number);
+    d=new Date(y,m-1,day);
+  } else {
+    d=new Date(iso);
+  }
+  if(isNaN(d))return String(iso);
+  return d.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'});
+}
+
+// Değer → persentil (0-100 arası kayan sayı)
+function valueToPct(table, pcts, ageM, value){
+  const row = interpolateRow(table, ageM);
+  const vals = row.slice(1);
+  if(value<=vals[0])return pcts[0];
+  if(value>=vals[6])return pcts[6];
+  for(let i=0;i<6;i++){
+    if(value>=vals[i]&&value<=vals[i+1])
+      return pcts[i]+(value-vals[i])/(vals[i+1]-vals[i])*(pcts[i+1]-pcts[i]);
+  }
+  return 50;
+}
+
+// Persentil → değer (ters yön)
+function pctToValue(table, pcts, ageM, pct){
+  const row = interpolateRow(table, ageM);
+  const vals = row.slice(1);
+  if(pct<=pcts[0])return vals[0];
+  if(pct>=pcts[6])return vals[6];
+  for(let i=0;i<6;i++){
+    if(pct>=pcts[i]&&pct<=pcts[i+1])
+      return vals[i]+(pct-pcts[i])/(pcts[i+1]-pcts[i])*(vals[i+1]-vals[i]);
+  }
+  return vals[3];
+}
+
+function interpolateRow(table, ageM){
+  let lo=0,hi=table.length-1;
+  for(let i=0;i<table.length;i++){if(table[i][0]<=ageM)lo=i;}
+  for(let i=0;i<table.length;i++){if(table[i][0]>=ageM){hi=i;break;}}
+  if(lo===hi)return table[lo];
+  const t=(ageM-table[lo][0])/(table[hi][0]-table[lo][0]);
+  return table[lo].map((v,i)=>i===0?ageM:v+t*(table[hi][i]-v));
+}
+
+function setSyncState(s,t){
+  document.getElementById('syncDot').className='sync-dot '+s;
+  document.getElementById('syncText').textContent=t;
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ── API ──────────────────────────────────────────────────
+async function fetchChild(cn){
+  setSyncState('syncing','Yükleniyor…');
+  try{
+    const res=await fetch(`${API}?child=${cn}`);
+    const data=await res.json();
+    cache[cn]=data.map(r=>({date:r.date,height:r.height?parseFloat(r.height):null,weight:r.weight?parseFloat(r.weight):null})).filter(r=>r.date);
+    setSyncState('ok','Senkronize');
+  }catch(e){
+    setSyncState('err','Bağlantı hatası');
+    showToast('⚠️ Veri yüklenemedi');
+    cache[cn]=cache[cn]||[];
+  }
+}
+async function saveChild(cn){
+  setSyncState('syncing','Kaydediliyor…');
+  try{
+    await fetch(API,{method:'POST',body:JSON.stringify({child:cn,action:'save',data:cache[cn]})});
+    setSyncState('ok','Kaydedildi');
+  }catch(e){
+    setSyncState('err','Kaydetme hatası');
+    showToast('⚠️ Kaydedilemedi');
+  }
+}
+
+// ── UI ───────────────────────────────────────────────────
+async function selectChild(cn,el){
+  activeChild=cn;
+  document.querySelectorAll('.child-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.metric-tab').forEach(t=>{
+    t.classList.remove('active-ragip','active-nusret');
+    if(t.dataset.metric===activeMetric)t.classList.add('active-'+cn);
+  });
+  const fc=cn==='ragip'?'rf':'nf';
+  document.querySelectorAll('#inputDate,#inputHeight,#inputWeight').forEach(i=>{i.className=fc});
+  document.getElementById('addBtn').className='btn-add '+(cn==='ragip'?'rb':'nb');
+  if(!cache[cn])await fetchChild(cn);
+  render();
+}
+
+function selectMetric(metric,el){
+  activeMetric=metric;
+  document.querySelectorAll('.metric-tab').forEach(t=>t.classList.remove('active-ragip','active-nusret'));
+  el.classList.add('active-'+activeChild);
+  render();
+}
+
+async function addMeasurement(){
+  const date=document.getElementById('inputDate').value;
+  const height=parseFloat(document.getElementById('inputHeight').value)||null;
+  const weight=parseFloat(document.getElementById('inputWeight').value)||null;
+  if(!date){showToast('Tarih giriniz');return;}
+  if(!height&&!weight){showToast('Boy veya kilo giriniz');return;}
+  const btn=document.getElementById('addBtn');
+  document.getElementById('addSpinner').classList.add('v');
+  document.getElementById('addBtnText').textContent='Kaydediliyor…';
+  btn.disabled=true;
+  const records=cache[activeChild]||[];
+  const ei=records.findIndex(r=>r.date===date);
+  if(ei>=0){if(height)records[ei].height=height;if(weight)records[ei].weight=weight;}
+  else{records.push({date,height,weight});records.sort((a,b)=>new Date(a.date)-new Date(b.date));}
+  cache[activeChild]=records;
+  await saveChild(activeChild);
+  document.getElementById('inputHeight').value='';
+  document.getElementById('inputWeight').value='';
+  btn.disabled=false;
+  document.getElementById('addSpinner').classList.remove('v');
+  document.getElementById('addBtnText').textContent='Kaydet';
+  showToast('✓ Ölçüm kaydedildi');
+  render();
+}
+
+async function deleteMeasurement(idx){
+  if(!confirm('Bu ölçümü silmek istiyor musunuz?'))return;
+  cache[activeChild].splice(idx,1);
+  await saveChild(activeChild);
+  showToast('Ölçüm silindi');
+  render();
+}
+
+// ── Render ───────────────────────────────────────────────
+function render(){renderStats();renderProjection();renderChart();renderHistory();}
+
+function getLastRecord(){
+  const records=cache[activeChild]||[];
+  return [...records].sort((a,b)=>new Date(b.date)-new Date(a.date))[0]||null;
+}
+
+function renderStats(){
+  const c=CHILDREN[activeChild];
+  const row=document.getElementById('statsRow');
+  const last=getLastRecord();
+  if(!last){row.innerHTML=`<div class="stat-card" style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:20px">Henüz ölçüm yok</div>`;return;}
+  const ageM=ageMonths(c.dob,last.date);
+  const ageStr=ageM!==null?fmtAgeFull(c.dob,last.date):'—';
+  let html=`<div class="stat-card"><div class="stat-label">Yaş</div><div class="stat-value ${c.cls}" style="font-size:17px">${ageStr}</div><div class="stat-sub">${fmtDate(last.date)}</div></div>`;
+  if(last.height){
+    const pct=ageM!==null?valueToPct(HEIGHT_BOYS,HW_PCTS,ageM,last.height):null;
+    html+=`<div class="stat-card"><div class="stat-label">Boy</div><div class="stat-value ${c.cls}">${last.height}</div><div class="stat-sub">cm</div>${pct!==null?`<div class="pct-badge ${c.cls}">${Math.round(pct)}. p</div>`:''}</div>`;
+  }else html+=`<div class="stat-card"><div class="stat-label">Boy</div><div class="stat-value" style="color:var(--muted)">—</div></div>`;
+  if(last.weight){
+    const pct=ageM!==null?valueToPct(WEIGHT_BOYS,HW_PCTS,ageM,last.weight):null;
+    let extra='<div class="stat-sub">kg</div>';
+    if(last.height&&last.weight){
+      const bmi=last.weight/Math.pow(last.height/100,2);
+      const bmiPct=ageM!==null?valueToPct(BMI_BOYS,BMI_PCTS,ageM,bmi):null;
+      extra=`<div class="stat-sub">VKİ ${bmi.toFixed(1)}${bmiPct!==null?' · '+Math.round(bmiPct)+'.p':''}</div>`;
+    }
+    html+=`<div class="stat-card"><div class="stat-label">Kilo</div><div class="stat-value ${c.cls}">${last.weight}</div>${extra}${pct!==null?`<div class="pct-badge ${c.cls}">${Math.round(pct)}. p</div>`:''}</div>`;
+  }else html+=`<div class="stat-card"><div class="stat-label">Kilo</div><div class="stat-value" style="color:var(--muted)">—</div></div>`;
+  row.innerHTML=html;
+}
+
+function renderProjection(){
+  const c=CHILDREN[activeChild];
+  const card=document.getElementById('projectionCard');
+  const projRow=document.getElementById('projectionRow');
+  const projSub=document.getElementById('projectionSub');
+
+  // Sadece boy/kilo sekmelerinde göster
+  if(activeMetric==='bmi'){card.style.display='none';return;}
+
+  const last=getLastRecord();
+  if(!last){card.style.display='none';return;}
+
+  const ageM=ageMonths(c.dob,last.date);
+  if(ageM===null||ageM>=216){card.style.display='none';return;}
+
+  const isHeight=activeMetric==='height';
+  const table=isHeight?HEIGHT_BOYS:WEIGHT_BOYS;
+  const unit=isHeight?'cm':'kg';
+  const val=isHeight?last.height:last.weight;
+  if(!val){card.style.display='none';return;}
+
+  // Mevcut persentil
+  const pct=valueToPct(table,HW_PCTS,ageM,val);
+  // 18 yaş (216 ay) için bu persentildeki değer
+  const projected=pctToValue(table,HW_PCTS,216,pct);
+
+  card.style.display='flex';
+  projRow.innerHTML=`
+    <span class="projection-val ${c.cls}">${projected.toFixed(1)} ${unit}</span>
+    <span class="projection-sep">·</span>
+    <span class="projection-sub">${Math.round(pct)}. persentil</span>
+  `;
+  projSub.textContent=`Şu anki persentil korunursa 18 yaşındaki tahmini ${isHeight?'boy':'kilo'}`;
+}
+
+function renderChart(){
+  const c=CHILDREN[activeChild],records=cache[activeChild]||[];
+  const isBMI=activeMetric==='bmi';
+  let table,pcts,pLabels;
+  if(isBMI){
+    table=BMI_BOYS;pcts=BMI_PCTS;
+    pLabels=['5.p','15.p','25.p','50.p','75.p','85.p','95.p'];
+    document.getElementById('refNote').textContent='VKİ persentilleri: 5., 15., 25., 50., 75., 85., 95. · Neyzi 2015';
+  }else{
+    table=activeMetric==='height'?HEIGHT_BOYS:WEIGHT_BOYS;
+    pcts=HW_PCTS;pLabels=['3.p','10.p','25.p','50.p','75.p','90.p','97.p'];
+    document.getElementById('refNote').textContent='Neyzi O. et al., J Clin Res Pediatr Endocrinol 2015;7(4):280-293';
+  }
+  const datasets=[];
+  [{idx:0,dash:[5,4],w:1,op:.18},{idx:1,dash:[4,3],w:1,op:.25},{idx:2,dash:[2,2],w:1,op:.3},
+   {idx:3,dash:[],w:1.5,op:.5},{idx:4,dash:[2,2],w:1,op:.3},{idx:5,dash:[4,3],w:1,op:.25},{idx:6,dash:[5,4],w:1,op:.18}]
+  .forEach((pc,i)=>datasets.push({label:pLabels[i],
+    data:table.map(r=>({x:r[0],y:r[1+pc.idx]})),
+    borderColor:`rgba(255,255,255,${pc.op})`,borderWidth:pc.w,borderDash:pc.dash,
+    fill:false,pointRadius:0,tension:.4,order:10+i}));
+
+  const pts=records.map(r=>{
+    const ageM=ageMonths(c.dob,r.date);if(ageM===null)return null;
+    let y=null;
+    if(isBMI&&r.height&&r.weight)y=r.weight/Math.pow(r.height/100,2);
+    else if(activeMetric==='height'&&r.height)y=r.height;
+    else if(activeMetric==='weight'&&r.weight)y=r.weight;
+    return y?{x:ageM,y:Math.round(y*10)/10}:null;
+  }).filter(Boolean);
+
+  if(pts.length)datasets.push({label:c.name,data:pts,borderColor:c.color,backgroundColor:c.color+'40',
+    borderWidth:2.5,pointRadius:2.5,pointBackgroundColor:c.color,pointBorderColor:'#0f0f1a',
+    pointBorderWidth:1,tension:.3,fill:false,order:1});
+
+  if(chartInstance)chartInstance.destroy();
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  const unit=isBMI?' kg/m²':activeMetric==='height'?' cm':' kg';
+  chartInstance=new Chart(ctx,{type:'line',data:{datasets},options:{
+    responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'rgba(30,30,53,0.97)',titleColor:'#e8e8f0',bodyColor:'#a0a0c0',
+      borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:10,
+      titleFont:{family:'DM Sans',weight:'600',size:12},bodyFont:{family:'DM Sans',size:12},
+      callbacks:{
+        title:items=>fmtAge(Math.round(items[0].parsed.x)),
+        label:item=>item.dataset.label!==c.name?null:` ${item.parsed.y.toFixed(1)}${unit}`,
+        filter:item=>item.dataset.label===c.name
+      }
+    }},
+    scales:{
+      x:{type:'linear',min:0,max:216,
+        ticks:{callback:v=>v%12===0?v/12+'y':null,maxTicksLimit:20,color:'rgba(255,255,255,0.25)',font:{family:'DM Sans',size:10}},
+        grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}},
+      y:{ticks:{color:'rgba(255,255,255,0.25)',font:{family:'DM Sans',size:10}},
+        grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}}
+    }
+  }});
+}
+
+function renderHistory(){
+  const c=CHILDREN[activeChild],records=cache[activeChild]||[];
+  const list=document.getElementById('historyList');
+  if(!records.length){list.innerHTML='<div class="empty-state">Henüz ölçüm eklenmedi</div>';return;}
+  list.innerHTML=[...records].map((r,i)=>({...r,origIdx:i}))
+    .sort((a,b)=>new Date(b.date)-new Date(a.date))
+    .map(r=>{
+      const ageM=ageMonths(c.dob,r.date);
+      const parts=[];if(r.height)parts.push(r.height+' cm');if(r.weight)parts.push(r.weight+' kg');
+      return `<div class="history-item"><div><div class="history-date">${fmtDate(r.date)}</div><div class="history-age">${fmtAgeFull(c.dob,r.date)}</div></div><div class="history-val ${c.cls}">${parts.join(' · ')}</div><button class="btn-del" onclick="deleteMeasurement(${r.origIdx})">×</button></div>`;
+    }).join('');
+}
+
+window.addEventListener('DOMContentLoaded',async()=>{
+  document.getElementById('inputDate').value=new Date().toISOString().split('T')[0];
+  await fetchChild('ragip');
+  render();
+});
+</script>
+</body>
+</html>
